@@ -10,7 +10,16 @@ export interface Project {
 }
 
 // Helper function to convert IProject to Project
-export const convertIProjectToProject = (iProject: any): Project => {
+export const convertIProjectToProject = (iProject: {
+  _id: any;
+  projectName: string;
+  subdomain: string;
+  customDomain?: string;
+  emoji: string;
+  domainStatus?: "pending" | "added" | "verified" | "failed";
+  createdAt: Date;
+  updatedAt: Date;
+}): Project => {
   return {
     _id: iProject._id.toString(),
     projectName: iProject.projectName,
