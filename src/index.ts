@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import projectRoutes from "./routes/projectRoutes";
 import domainRoutes from "./routes/domainRoutes";
 import connectDatabase from "./config/database";
+import { clerkMiddleware } from "@clerk/express";
+import clerkWebhooks from "./webhooks/clerk.webhook";
 
 // Load environment variables
 dotenv.config();
@@ -53,7 +55,14 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// MIDDLEWARES
+app.use(clerkMiddleware());
+
 // Routes
+console.log("🔧 Registering webhook route...");
+app.post("/webhooks/clerk", clerkWebhooks);
+console.log("✅ Webhook route registered: POST /webhooks/clerk");
+
 app.get("/", (req: Request, res: Response) => {
   res.json({
     message: "Welcome to Tokly Backend API",

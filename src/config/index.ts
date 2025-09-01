@@ -45,6 +45,13 @@ export const config = {
     mongoURI: process.env.MONGODB_URI || "mongodb://localhost:27017/tokly",
   },
 
+  // Clerk configuration
+  clerk: {
+    secretKey: process.env.CLERK_SECRET_KEY || "",
+    webhookSecret: process.env.CLERK_WEBHOOK_SECRET || "",
+    publishableKey: process.env.CLERK_PUBLISHABLE_KEY || "",
+  },
+
   // Rate limiting (if needed in future)
   rateLimit: {
     windowMs: 15 * 60 * 1000, // 15 minutes
