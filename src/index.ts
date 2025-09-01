@@ -14,18 +14,40 @@ const PORT = process.env.PORT || 8000;
 // Middleware
 app.use(
   cors({
-    origin: [
-      "https://tokly-frontend.vercel.app",
-      "http://localhost:3000",
-      "https://tokly.io",
-      "https://www.tokly.io",
-      "https://tokly.vercel.app",
-      "https://tokly-git-main-tokly.vercel.app",
-      "https://tokly-tokly.vercel.app",
-    ],
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      // Allow localhost for development
+      if (
+        origin.startsWith("http://localhost:") ||
+        origin.startsWith("https://localhost:")
+      ) {
+        return callback(null, true);
+      }
+
+      // Allow all tokly.io subdomains and main domain
+      if (
+        origin.endsWith(".tokly.io") ||
+        origin === "https://tokly.io" ||
+        origin === "https://www.tokly.io"
+      ) {
+        return callback(null, true);
+      }
+
+      // Allow Vercel deployments
+      if (origin.includes("vercel.app")) {
+        return callback(null, true);
+      }
+
+      // For any other origins, log them to see what's being blocked
+      console.log("CORS blocked origin:", origin);
+      return callback(null, false);
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
   })
 );
 app.use(express.json());

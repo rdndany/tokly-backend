@@ -13,6 +13,9 @@ export const config = {
     "https://tokly-frontend.vercel.app",
     "http://localhost:3000",
     "https://tokly.io",
+    "https://www.tokly.io",
+    // Allow all tokly.io subdomains
+    "*.tokly.io",
     ...(process.env.ALLOWED_ORIGINS
       ? process.env.ALLOWED_ORIGINS.split(",")
       : []),
