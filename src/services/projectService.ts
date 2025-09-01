@@ -70,7 +70,6 @@ export const createProject = async (
   if (useCustomDomain && data.customDomain) {
     try {
       await VercelService.addDomain(data.customDomain);
-      console.log(`Domain ${data.customDomain} successfully added to Vercel`);
 
       // Update domain status to "added" - domain is added to Vercel but DNS not configured yet
       project.domainStatus = "added";
@@ -100,28 +99,12 @@ export const getProjectBySubdomain = async (
   return await Project.findOne({ subdomain: sanitized });
 };
 
-// Get all projects (for admin purposes)
-export const getAllProjects = async (): Promise<IProject[]> => {
-  return await Project.find().sort({ createdAt: -1 });
-};
-
 // Update project
 export const updateProject = async (
   id: string,
   updates: Partial<Omit<IProject, "_id" | "createdAt" | "updatedAt">>
 ): Promise<IProject | null> => {
   return await Project.findByIdAndUpdate(id, updates, { new: true });
-};
-
-// Delete project
-export const deleteProject = async (id: string): Promise<boolean> => {
-  const result = await Project.findByIdAndDelete(id);
-  return !!result;
-};
-
-// Get project count
-export const getProjectCount = async (): Promise<number> => {
-  return await Project.countDocuments();
 };
 
 // Get project by custom domain
@@ -157,10 +140,7 @@ export const projectService = {
   createProject,
   getProjectById,
   getProjectBySubdomain,
-  getAllProjects,
   updateProject,
-  deleteProject,
-  getProjectCount,
   getProjectByCustomDomain,
   updateDomainStatus,
   isCustomDomainAvailable,

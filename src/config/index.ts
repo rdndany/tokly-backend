@@ -25,7 +25,7 @@ export const config = {
   // Project configuration
   project: {
     maxNameLength: 50,
-    maxDescriptionLength: 500,
+
     allowedEmojis: ["🚀", "🌙", "🐸", "⭐", "🔥", "💎", "🎯", "🌟", "💫", "🎨"],
     defaultEmoji: "🚀",
   },

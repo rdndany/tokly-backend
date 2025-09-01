@@ -118,9 +118,6 @@ export const sanitizeRequestBody = (
     if (req.body.emoji && typeof req.body.emoji === "string") {
       req.body.emoji = req.body.emoji.trim();
     }
-    if (req.body.description && typeof req.body.description === "string") {
-      req.body.description = req.body.description.trim();
-    }
   }
   next();
 };

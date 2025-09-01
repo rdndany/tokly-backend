@@ -35,7 +35,6 @@ export const convertIProjectToProject = (iProject: {
 export interface CreateProjectRequest {
   projectName: string;
   emoji: string;
-  description?: string;
   customDomain?: string;
   useCustomDomain?: boolean;
 }

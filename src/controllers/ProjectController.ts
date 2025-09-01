@@ -16,7 +16,7 @@ export const createProject = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { projectName, emoji, description }: CreateProjectRequest = req.body;
+    const { projectName, emoji }: CreateProjectRequest = req.body;
 
     // Validate required fields
     if (!projectName || !emoji) {
@@ -85,7 +85,6 @@ export const createProject = async (
     const project = await projectService.createProject({
       projectName: projectName.trim(),
       emoji: emoji.trim(),
-      description: description?.trim(),
       customDomain: req.body.customDomain?.trim(),
       useCustomDomain: req.body.useCustomDomain,
     });
@@ -136,11 +135,64 @@ export const createProject = async (
   } catch (error) {
     console.error("Error creating project:", error);
 
+    // Handle specific business logic errors
+    if (error instanceof Error) {
+      const errorMessage = error.message;
+
+      // Handle custom domain already in use
+      if (errorMessage.includes("Custom domain is already in use")) {
+        const errorResponse: ErrorResponse = {
+          success: false,
+          error: "Domain already in use",
+          message:
+            "This custom domain is already being used by another project. Please choose a different domain.",
+        };
+        res.status(409).json(errorResponse);
+        return;
+      }
+
+      // Handle project name already taken
+      if (errorMessage.includes("Project name is already taken")) {
+        const errorResponse: ErrorResponse = {
+          success: false,
+          error: "Project name already taken",
+          message:
+            "This project name is already in use. Please choose a different name.",
+        };
+        res.status(409).json(errorResponse);
+        return;
+      }
+
+      // Handle invalid project name
+      if (errorMessage.includes("Invalid project name")) {
+        const errorResponse: ErrorResponse = {
+          success: false,
+          error: "Invalid project name",
+          message:
+            "Project name must contain at least one valid character (letters, numbers, or hyphens).",
+        };
+        res.status(400).json(errorResponse);
+        return;
+      }
+
+      // Handle Vercel domain addition failure
+      if (errorMessage.includes("Failed to add domain to Vercel")) {
+        const errorResponse: ErrorResponse = {
+          success: false,
+          error: "Domain setup failed",
+          message:
+            "Failed to set up the custom domain. Please try again later.",
+        };
+        res.status(500).json(errorResponse);
+        return;
+      }
+    }
+
+    // Default error response for unexpected errors
     const errorResponse: ErrorResponse = {
       success: false,
       error: "Internal server error",
-      message:
-        error instanceof Error ? error.message : "An unexpected error occurred",
+      message: "An unexpected error occurred. Please try again later.",
     };
 
     res.status(500).json(errorResponse);
@@ -190,99 +242,6 @@ export const getProjectBySubdomain = async (
       success: false,
       error: "Internal server error",
       message: "An unexpected error occurred while fetching the project",
-    };
-
-    res.status(500).json(errorResponse);
-  }
-};
-
-// Get all projects (for admin purposes)
-export const getAllProjects = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const projects = await projectService.getAllProjects();
-
-    res.status(200).json({
-      success: true,
-      projects,
-      count: projects.length,
-    });
-  } catch (error) {
-    console.error("Error fetching all projects:", error);
-
-    const errorResponse: ErrorResponse = {
-      success: false,
-      error: "Internal server error",
-      message: "An unexpected error occurred while fetching projects",
-    };
-
-    res.status(500).json(errorResponse);
-  }
-};
-
-// Check if subdomain is available
-export const checkSubdomainAvailability = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const { subdomain } = req.params;
-
-    if (!subdomain) {
-      const errorResponse: ErrorResponse = {
-        success: false,
-        error: "Missing subdomain",
-        message: "Subdomain parameter is required",
-      };
-      res.status(400).json(errorResponse);
-      return;
-    }
-
-    const isAvailable = await projectService.isSubdomainAvailable(subdomain);
-
-    res.status(200).json({
-      success: true,
-      subdomain,
-      available: isAvailable,
-      message: isAvailable
-        ? "Subdomain is available"
-        : "Subdomain is already taken",
-    });
-  } catch (error) {
-    console.error("Error checking subdomain availability:", error);
-
-    const errorResponse: ErrorResponse = {
-      success: false,
-      error: "Internal server error",
-      message:
-        "An unexpected error occurred while checking subdomain availability",
-    };
-
-    res.status(500).json(errorResponse);
-  }
-};
-
-// Get project statistics
-export const getProjectStats = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const stats = await projectService.getProjectCount();
-
-    res.status(200).json({
-      success: true,
-      stats,
-    });
-  } catch (error) {
-    console.error("Error fetching project stats:", error);
-
-    const errorResponse: ErrorResponse = {
-      success: false,
-      error: "Internal server error",
-      message: "An unexpected error occurred while fetching project statistics",
     };
 
     res.status(500).json(errorResponse);
