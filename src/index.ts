@@ -1,6 +1,9 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import projectRoutes from "./routes/projectRoutes";
+import domainRoutes from "./routes/domainRoutes";
+import connectDatabase from "./config/database";
 
 // Load environment variables
 dotenv.config();
@@ -9,7 +12,18 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "https://tokly-frontend.vercel.app",
+      "http://localhost:3000",
+      "https://tokly.io",
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -38,6 +52,12 @@ app.get("/api/status", (req: Request, res: Response) => {
   });
 });
 
+// Project routes
+app.use("/api/projects", projectRoutes);
+
+// Domain routes
+app.use("/api/domains", domainRoutes);
+
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: any) => {
   console.error(err.stack);
@@ -56,10 +76,18 @@ app.use("*", (req: Request, res: Response) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Server is running on port ${PORT}`);
   console.log(`📍 Health check: http://localhost:${PORT}/health`);
   console.log(`🌐 API endpoint: http://localhost:${PORT}/api/status`);
+
+  // Connect to database
+  try {
+    await connectDatabase();
+  } catch (error) {
+    console.error("Failed to connect to database:", error);
+    process.exit(1);
+  }
 });
 
 export default app;
