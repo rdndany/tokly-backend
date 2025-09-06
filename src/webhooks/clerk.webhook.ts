@@ -26,38 +26,17 @@ export const clerkWebhooks: RequestHandler = async (
       return void res.status(400).json({ error: "Missing Svix headers" });
     }
 
+    // Getting data from request body
+    const { data, type } = req.body;
+
     // Create a Svix instance with Clerk webhook secret
     const whook = new Webhook(config.clerk.webhookSecret);
 
-    // Verify the webhook signature using the raw body
-    // req.body should be a Buffer from express.raw() middleware
-    let payload: Buffer | string;
-
-    if (Buffer.isBuffer(req.body)) {
-      payload = req.body;
-    } else if (typeof req.body === "string") {
-      payload = req.body;
-    } else {
-      // Fallback: convert to string if it's an object
-      payload = JSON.stringify(req.body);
-    }
-
-    console.log(
-      "Payload type:",
-      typeof payload,
-      "Is Buffer:",
-      Buffer.isBuffer(payload)
-    );
-
-    await whook.verify(payload, {
+    await whook.verify(JSON.stringify(req.body), {
       "svix-id": svixId,
       "svix-timestamp": svixTimestamp,
       "svix-signature": svixSignature,
     });
-
-    // Parse the verified payload
-    const body = JSON.parse(payload.toString());
-    const { data, type } = body;
 
     // Define the type of userData as Partial<UserDocument> to allow missing fields
     let userData: Partial<UserDocument>;
