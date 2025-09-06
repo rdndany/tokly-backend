@@ -7,15 +7,6 @@ import connectDatabase from "./config/database";
 import { clerkMiddleware } from "@clerk/express";
 import clerkWebhooks from "./webhooks/clerk.webhook";
 
-// Extend Request interface to include rawBody
-declare global {
-  namespace Express {
-    interface Request {
-      rawBody?: string;
-    }
-  }
-}
-
 // Load environment variables
 dotenv.config();
 
@@ -61,37 +52,16 @@ app.use(
     optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
   })
 );
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // MIDDLEWARES
 app.use(clerkMiddleware());
 
-// Webhook route - MUST be before express.json() middleware to capture raw body
+// Routes
 console.log("🔧 Registering webhook route...");
-
-// Custom middleware to capture raw body for webhooks
-app.post(
-  "/webhooks/clerk",
-  (req, res, next) => {
-    let data = "";
-    req.setEncoding("utf8");
-
-    req.on("data", (chunk) => {
-      data += chunk;
-    });
-
-    req.on("end", () => {
-      req.rawBody = data;
-      next();
-    });
-  },
-  clerkWebhooks
-);
-
+app.post("/webhooks/clerk", clerkWebhooks);
 console.log("✅ Webhook route registered: POST /webhooks/clerk");
-
-// JSON parsing middleware for all other routes
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req: Request, res: Response) => {
   res.json({
