@@ -76,12 +76,104 @@ export const clerkWebhooks: RequestHandler = async (
       rawBodyString.substring(0, 100) + "..."
     );
 
-    // Verify using the raw body string
-    const payload = whook.verify(rawBodyString, {
-      "svix-id": svixId,
-      "svix-timestamp": svixTimestamp,
-      "svix-signature": svixSignature,
-    }) as { data: any; type: string };
+    // Debug: Log signature verification details
+    console.log(`🔍 [${webhookId}] Signature verification details:`);
+    console.log(`  - svix-id: ${svixId}`);
+    console.log(`  - svix-timestamp: ${svixTimestamp}`);
+    console.log(`  - svix-signature: ${svixSignature.substring(0, 20)}...`);
+    console.log(
+      `  - webhook secret: ${config.clerk.webhookSecret.substring(0, 10)}...`
+    );
+    console.log(`  - body length: ${rawBodyString.length}`);
+
+    // Try to verify the signature
+    let payload: { data: any; type: string };
+    try {
+      payload = whook.verify(rawBodyString, {
+        "svix-id": svixId,
+        "svix-timestamp": svixTimestamp,
+        "svix-signature": svixSignature,
+      }) as { data: any; type: string };
+      console.log(`✅ [${webhookId}] Webhook signature verified successfully!`);
+    } catch (verifyError) {
+      console.error(
+        `❌ [${webhookId}] Signature verification failed:`,
+        verifyError
+      );
+
+      // Additional debugging: try to understand what went wrong
+      console.log(`🔍 [${webhookId}] Attempting to debug signature issue...`);
+
+      // Check if the webhook secret looks correct
+      if (
+        !config.clerk.webhookSecret ||
+        config.clerk.webhookSecret.length < 30
+      ) {
+        console.error(
+          `❌ [${webhookId}] Webhook secret appears to be invalid (length: ${config.clerk.webhookSecret?.length})`
+        );
+      }
+
+      // Check if the signature header format is correct
+      if (!svixSignature.startsWith("v1,")) {
+        console.error(
+          `❌ [${webhookId}] Signature header doesn't start with 'v1,' - got: ${svixSignature.substring(
+            0,
+            10
+          )}`
+        );
+      }
+
+      // Log the exact error details
+      if (verifyError instanceof Error) {
+        console.error(`❌ [${webhookId}] Error details:`, {
+          name: verifyError.name,
+          message: verifyError.message,
+          stack: verifyError.stack?.split("\n")[0],
+        });
+      }
+
+      // Try alternative verification approaches
+      console.log(
+        `🔍 [${webhookId}] Trying alternative verification methods...`
+      );
+
+      try {
+        // Method 2: Try with Buffer.from(rawBodyString)
+        console.log(`🔍 [${webhookId}] Trying Buffer.from() approach...`);
+        payload = whook.verify(Buffer.from(rawBodyString, "utf8"), {
+          "svix-id": svixId,
+          "svix-timestamp": svixTimestamp,
+          "svix-signature": svixSignature,
+        }) as { data: any; type: string };
+        console.log(
+          `✅ [${webhookId}] Webhook signature verified with Buffer.from()!`
+        );
+      } catch (bufferError) {
+        console.log(
+          `⚠️ [${webhookId}] Buffer.from() method failed:`,
+          bufferError instanceof Error
+            ? bufferError.message
+            : String(bufferError)
+        );
+
+        try {
+          // Method 3: Try with different encoding
+          console.log(`🔍 [${webhookId}] Trying different encoding...`);
+          payload = whook.verify(rawBodyString, {
+            "svix-id": svixId,
+            "svix-timestamp": svixTimestamp,
+            "svix-signature": svixSignature,
+          }) as { data: any; type: string };
+          console.log(
+            `✅ [${webhookId}] Webhook signature verified with alternative encoding!`
+          );
+        } catch (encodingError) {
+          console.error(`❌ [${webhookId}] All verification methods failed`);
+          throw verifyError; // Throw the original error
+        }
+      }
+    }
 
     console.log(`✅ [${webhookId}] Webhook signature verified`);
 
