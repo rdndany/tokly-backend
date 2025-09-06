@@ -48,7 +48,7 @@ export const config = {
   // Clerk configuration
   clerk: {
     secretKey: process.env.CLERK_SECRET_KEY || "",
-    webhookSecret: process.env.CLERK_WEBHOOK_SECRET || "",
+    webhookSecret: process.env.CLERK_WEBHOOK_SIGNING_SECRET || "",
     publishableKey: process.env.CLERK_PUBLISHABLE_KEY || "",
   },
 
