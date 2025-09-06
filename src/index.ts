@@ -52,16 +52,22 @@ app.use(
     optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
   })
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 // MIDDLEWARES
 app.use(clerkMiddleware());
 
-// Routes
+// Webhook route - MUST be before express.json() middleware to capture raw body
 console.log("🔧 Registering webhook route...");
-app.post("/webhooks/clerk", clerkWebhooks);
+app.post(
+  "/webhooks/clerk",
+  express.raw({ type: "application/json" }),
+  clerkWebhooks
+);
 console.log("✅ Webhook route registered: POST /webhooks/clerk");
+
+// JSON parsing middleware for all other routes
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req: Request, res: Response) => {
   res.json({

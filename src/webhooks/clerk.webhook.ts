@@ -23,7 +23,7 @@ export const clerkWebhooks: RequestHandler = async (
   res: Response
 ): Promise<void> => {
   const webhookId = (req.headers["svix-id"] as string) || "unknown";
-  console.log(`🔔 Clerk webhook received [${webhookId}]:`, req.body.type);
+  console.log(`🔔 Clerk webhook received [${webhookId}]`);
 
   try {
     // Ensure required headers are present
@@ -36,8 +36,20 @@ export const clerkWebhooks: RequestHandler = async (
       return void res.status(400).json({ error: "Missing Svix headers" });
     }
 
-    // Getting data from request body
-    const { data, type } = req.body;
+    // Create a Svix instance with Clerk webhook secret
+    const whook = new Webhook(config.clerk.webhookSecret);
+
+    // Verify using raw body (Buffer) converted to string
+    const payload = whook.verify(req.body.toString(), {
+      "svix-id": svixId,
+      "svix-timestamp": svixTimestamp,
+      "svix-signature": svixSignature,
+    }) as { data: any; type: string };
+
+    console.log(`✅ [${webhookId}] Webhook signature verified`);
+
+    // Parse the verified payload
+    const { data, type } = payload;
 
     // Validate data structure
     if (!data || !data.id) {
@@ -58,17 +70,6 @@ export const clerkWebhooks: RequestHandler = async (
         full_name: data.full_name,
       });
     }
-
-    // Create a Svix instance with Clerk webhook secret
-    const whook = new Webhook(config.clerk.webhookSecret);
-
-    await whook.verify(JSON.stringify(req.body), {
-      "svix-id": svixId,
-      "svix-timestamp": svixTimestamp,
-      "svix-signature": svixSignature,
-    });
-
-    console.log(`✅ [${webhookId}] Webhook signature verified`);
 
     // Switch Cases for different Events
     switch (type) {
@@ -203,7 +204,7 @@ export const clerkWebhooks: RequestHandler = async (
     }
   } catch (error) {
     console.error(`❌ [${webhookId}] Webhook processing failed:`, error);
-    console.error(`📋 [${webhookId}] Webhook body:`, req.body);
+    console.error(`📋 [${webhookId}] Webhook body:`, req.body.toString());
 
     return void res.status(400).json({ error: "Webhook processing failed" });
   }
