@@ -60,7 +60,11 @@ app.use(clerkMiddleware());
 
 // Routes
 console.log("🔧 Registering webhook route...");
-app.post("/webhooks/clerk", clerkWebhooks);
+app.post(
+  "/webhooks/clerk",
+  express.raw({ type: "application/json" }),
+  clerkWebhooks
+);
 console.log("✅ Webhook route registered: POST /webhooks/clerk");
 
 app.get("/", (req: Request, res: Response) => {

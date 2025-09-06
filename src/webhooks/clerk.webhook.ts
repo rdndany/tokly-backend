@@ -1,6 +1,5 @@
 import { Request, Response, RequestHandler } from "express";
-import { verifyWebhook } from "@clerk/backend/webhooks";
-import { WebhookEvent } from "@clerk/backend";
+import { verifyWebhook } from "@clerk/express/webhooks";
 
 import UserModel, { UserDocument } from "../models/User";
 import { Clerk } from "@clerk/clerk-sdk-node";
@@ -17,8 +16,8 @@ export const clerkWebhooks: RequestHandler = async (
   res: Response
 ): Promise<void> => {
   try {
-    // Verify webhook using Clerk's built-in method
-    const evt = (await verifyWebhook(req.body)) as WebhookEvent;
+    // Verify webhook using Clerk's Express method
+    const evt = await verifyWebhook(req);
 
     // Access the event data
     const { data, type } = evt;
