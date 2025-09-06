@@ -26,6 +26,19 @@ export const clerkWebhooks: RequestHandler = async (
   console.log(`🔔 Clerk webhook received [${webhookId}]`);
 
   try {
+    // Debug: Log request details
+    console.log(`🔍 [${webhookId}] Request body type:`, typeof req.body);
+    console.log(
+      `🔍 [${webhookId}] Request body length:`,
+      req.body?.length || "undefined"
+    );
+    console.log(`🔍 [${webhookId}] Request headers:`, {
+      "content-type": req.headers["content-type"],
+      "svix-id": req.headers["svix-id"],
+      "svix-timestamp": req.headers["svix-timestamp"],
+      "svix-signature": req.headers["svix-signature"] ? "present" : "missing",
+    });
+
     // Ensure required headers are present
     const svixId = req.headers["svix-id"] as string | undefined;
     const svixTimestamp = req.headers["svix-timestamp"] as string | undefined;
@@ -37,14 +50,68 @@ export const clerkWebhooks: RequestHandler = async (
     }
 
     // Create a Svix instance with Clerk webhook secret
+    console.log(
+      `🔍 [${webhookId}] Webhook secret configured:`,
+      config.clerk.webhookSecret ? "Yes" : "No"
+    );
+    console.log(
+      `🔍 [${webhookId}] Webhook secret length:`,
+      config.clerk.webhookSecret?.length || 0
+    );
     const whook = new Webhook(config.clerk.webhookSecret);
 
-    // Verify using raw body (Buffer) converted to string
-    const payload = whook.verify(req.body.toString(), {
-      "svix-id": svixId,
-      "svix-timestamp": svixTimestamp,
-      "svix-signature": svixSignature,
-    }) as { data: any; type: string };
+    // Debug: Log the raw body before verification
+    const rawBodyString = req.body.toString();
+    console.log(
+      `🔍 [${webhookId}] Raw body string length:`,
+      rawBodyString.length
+    );
+    console.log(
+      `🔍 [${webhookId}] Raw body preview:`,
+      rawBodyString.substring(0, 100) + "..."
+    );
+
+    // Try verification with different approaches
+    let payload: { data: any; type: string };
+
+    try {
+      // First try: Direct verification with raw body string
+      payload = whook.verify(rawBodyString, {
+        "svix-id": svixId,
+        "svix-timestamp": svixTimestamp,
+        "svix-signature": svixSignature,
+      }) as { data: any; type: string };
+      console.log(`✅ [${webhookId}] Webhook signature verified (method 1)`);
+    } catch (error) {
+      console.log(
+        `⚠️ [${webhookId}] Method 1 failed, trying method 2:`,
+        error instanceof Error ? error.message : String(error)
+      );
+
+      try {
+        // Second try: Using Buffer directly
+        payload = whook.verify(req.body, {
+          "svix-id": svixId,
+          "svix-timestamp": svixTimestamp,
+          "svix-signature": svixSignature,
+        }) as { data: any; type: string };
+        console.log(`✅ [${webhookId}] Webhook signature verified (method 2)`);
+      } catch (error2) {
+        console.log(
+          `⚠️ [${webhookId}] Method 2 failed, trying method 3:`,
+          error2 instanceof Error ? error2.message : String(error2)
+        );
+
+        // Third try: Using JSON.stringify on the raw body
+        const jsonString = JSON.stringify(JSON.parse(rawBodyString));
+        payload = whook.verify(jsonString, {
+          "svix-id": svixId,
+          "svix-timestamp": svixTimestamp,
+          "svix-signature": svixSignature,
+        }) as { data: any; type: string };
+        console.log(`✅ [${webhookId}] Webhook signature verified (method 3)`);
+      }
+    }
 
     console.log(`✅ [${webhookId}] Webhook signature verified`);
 
