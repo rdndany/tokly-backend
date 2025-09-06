@@ -30,8 +30,25 @@ export const clerkWebhooks: RequestHandler = async (
     const whook = new Webhook(config.clerk.webhookSecret);
 
     // Verify the webhook signature using the raw body
-    // req.body is now a Buffer from express.raw() middleware
-    const payload = req.body as Buffer;
+    // req.body should be a Buffer from express.raw() middleware
+    let payload: Buffer | string;
+
+    if (Buffer.isBuffer(req.body)) {
+      payload = req.body;
+    } else if (typeof req.body === "string") {
+      payload = req.body;
+    } else {
+      // Fallback: convert to string if it's an object
+      payload = JSON.stringify(req.body);
+    }
+
+    console.log(
+      "Payload type:",
+      typeof payload,
+      "Is Buffer:",
+      Buffer.isBuffer(payload)
+    );
+
     await whook.verify(payload, {
       "svix-id": svixId,
       "svix-timestamp": svixTimestamp,
