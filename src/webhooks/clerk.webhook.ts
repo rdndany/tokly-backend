@@ -26,17 +26,19 @@ export const clerkWebhooks: RequestHandler = async (
       return void res.status(400).json({ error: "Missing Svix headers" });
     }
 
-    // Getting data from request body
-    const { data, type } = req.body;
-
     // Create a Svix instance with Clerk webhook secret
     const whook = new Webhook(config.clerk.webhookSecret);
 
-    await whook.verify(JSON.stringify(req.body), {
+    // Verify the webhook signature using the raw body
+    // req.body should be a Buffer from express.raw() middleware
+    const evt = (await whook.verify(req.body, {
       "svix-id": svixId,
       "svix-timestamp": svixTimestamp,
       "svix-signature": svixSignature,
-    });
+    })) as any;
+
+    // Extract data and type from the verified event
+    const { data, type } = evt;
 
     // Define the type of userData as Partial<UserDocument> to allow missing fields
     let userData: Partial<UserDocument>;
@@ -94,7 +96,7 @@ export const clerkWebhooks: RequestHandler = async (
   } catch (error) {
     console.error("Webhook verification failed:", error);
 
-    return void res.status(400).json({ error: "Webhook processing failed" });
+    return void res.status(400).json({ error: "Webhook verification failed" });
   }
 };
 
