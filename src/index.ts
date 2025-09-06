@@ -52,19 +52,19 @@ app.use(
     optionsSuccessStatus: 200, // Some legacy browsers (IE11, various SmartTVs) choke on 204
   })
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// Serve static files from the public directory
+app.use(express.static("src/public"));
 
 // MIDDLEWARES
 app.use(clerkMiddleware());
 
 // Routes
 console.log("🔧 Registering webhook route...");
-app.post(
-  "/webhooks/clerk",
-  express.raw({ type: "application/json" }),
-  clerkWebhooks
-);
+
+app.post("/webhooks/clerk", clerkWebhooks);
 console.log("✅ Webhook route registered: POST /webhooks/clerk");
 
 app.get("/", (req: Request, res: Response) => {
