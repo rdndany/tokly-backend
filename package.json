@@ -27,7 +27,7 @@
     "log4js": "^6.9.1",
     "mongodb": "^6.19.0",
     "mongoose": "^8.18.0",
-    "svix": "^1.75.0"
+    "svix": "^1.61.3"
   },
   "devDependencies": {
     "@types/axios": "^0.9.36",
