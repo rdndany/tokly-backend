@@ -10,13 +10,21 @@ import {
   convertIProjectToProject,
 } from "../types/project";
 
+// Response types for subdomain availability check
+interface CheckSubdomainAvailabilityResponse {
+  success: boolean;
+  available: boolean;
+  message: string;
+  subdomain?: string;
+}
+
 // Create a new project
 export const createProject = async (
   req: Request,
   res: Response
 ): Promise<void> => {
   try {
-    const { projectName, emoji }: CreateProjectRequest = req.body;
+    const { projectName, emoji, templateId }: CreateProjectRequest = req.body;
 
     // Validate required fields
     if (!projectName || !emoji) {
@@ -87,6 +95,7 @@ export const createProject = async (
       emoji: emoji.trim(),
       customDomain: req.body.customDomain?.trim(),
       useCustomDomain: req.body.useCustomDomain,
+      templateId: templateId || "modern",
     });
 
     let domainSetup: DomainSetupInstructions | undefined;
@@ -242,6 +251,107 @@ export const getProjectBySubdomain = async (
       success: false,
       error: "Internal server error",
       message: "An unexpected error occurred while fetching the project",
+    };
+
+    res.status(500).json(errorResponse);
+  }
+};
+
+// Check subdomain availability
+export const checkSubdomainAvailability = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { subdomain } = req.params;
+
+    if (!subdomain) {
+      const errorResponse: ErrorResponse = {
+        success: false,
+        error: "Missing subdomain",
+        message: "Subdomain parameter is required",
+      };
+      res.status(400).json(errorResponse);
+      return;
+    }
+
+    // Validate subdomain format (same validation as frontend)
+    const subdomainRegex = /^[a-zA-Z0-9-]+$/;
+    if (!subdomainRegex.test(subdomain)) {
+      const errorResponse: ErrorResponse = {
+        success: false,
+        error: "Invalid subdomain format",
+        message: "Only letters, numbers, and hyphens are allowed",
+      };
+      res.status(400).json(errorResponse);
+      return;
+    }
+
+    // Check minimum length
+    if (subdomain.length < 3) {
+      const errorResponse: ErrorResponse = {
+        success: false,
+        error: "Subdomain too short",
+        message: "Subdomain must be at least 3 characters",
+      };
+      res.status(400).json(errorResponse);
+      return;
+    }
+
+    // Check maximum length
+    if (subdomain.length > 63) {
+      const errorResponse: ErrorResponse = {
+        success: false,
+        error: "Subdomain too long",
+        message: "Subdomain must be 63 characters or less",
+      };
+      res.status(400).json(errorResponse);
+      return;
+    }
+
+    // Check if starts or ends with hyphen
+    if (subdomain.startsWith("-") || subdomain.endsWith("-")) {
+      const errorResponse: ErrorResponse = {
+        success: false,
+        error: "Invalid subdomain format",
+        message: "Cannot start or end with a hyphen",
+      };
+      res.status(400).json(errorResponse);
+      return;
+    }
+
+    // Check for consecutive hyphens
+    if (subdomain.includes("--")) {
+      const errorResponse: ErrorResponse = {
+        success: false,
+        error: "Invalid subdomain format",
+        message: "Cannot contain consecutive hyphens",
+      };
+      res.status(400).json(errorResponse);
+      return;
+    }
+
+    // Check availability using service
+    const isAvailable = await projectService.isSubdomainAvailable(subdomain);
+
+    const response: CheckSubdomainAvailabilityResponse = {
+      success: true,
+      available: isAvailable,
+      message: isAvailable
+        ? "Subdomain is available"
+        : "Subdomain is already taken",
+      subdomain: subdomain.toLowerCase(),
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error("Error checking subdomain availability:", error);
+
+    const errorResponse: ErrorResponse = {
+      success: false,
+      error: "Internal server error",
+      message:
+        "An unexpected error occurred while checking subdomain availability",
     };
 
     res.status(500).json(errorResponse);

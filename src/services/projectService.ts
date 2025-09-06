@@ -60,6 +60,7 @@ export const createProject = async (
     subdomain: sanitizedSubdomain,
     customDomain: useCustomDomain ? data.customDomain : undefined,
     emoji: data.emoji || "🚀",
+    templateId: data.templateId || "modern",
     domainStatus: useCustomDomain ? "pending" : "verified",
   };
 

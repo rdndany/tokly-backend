@@ -4,6 +4,7 @@ export interface Project {
   subdomain: string;
   customDomain?: string;
   emoji: string;
+  templateId?: string;
   domainStatus?: "pending" | "added" | "verified" | "failed";
   createdAt: Date;
   updatedAt: Date;
@@ -16,6 +17,7 @@ export const convertIProjectToProject = (iProject: {
   subdomain: string;
   customDomain?: string;
   emoji: string;
+  templateId?: string;
   domainStatus?: "pending" | "added" | "verified" | "failed";
   createdAt: Date;
   updatedAt: Date;
@@ -26,6 +28,7 @@ export const convertIProjectToProject = (iProject: {
     subdomain: iProject.subdomain,
     customDomain: iProject.customDomain,
     emoji: iProject.emoji,
+    templateId: iProject.templateId,
     domainStatus: iProject.domainStatus,
     createdAt: iProject.createdAt,
     updatedAt: iProject.updatedAt,
@@ -37,6 +40,7 @@ export interface CreateProjectRequest {
   emoji: string;
   customDomain?: string;
   useCustomDomain?: boolean;
+  templateId?: string;
 }
 
 export interface CreateProjectResponse {

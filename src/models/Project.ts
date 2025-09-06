@@ -5,6 +5,7 @@ export interface IProject extends Document {
   emoji: string;
   subdomain: string;
   customDomain?: string;
+  templateId?: string;
   domainStatus?: "pending" | "added" | "verified" | "failed";
   createdAt: Date;
   updatedAt: Date;
@@ -34,6 +35,10 @@ const ProjectSchema = new Schema<IProject>(
       type: String,
       lowercase: true,
       trim: true,
+    },
+    templateId: {
+      type: String,
+      default: "modern",
     },
     domainStatus: {
       type: String,
